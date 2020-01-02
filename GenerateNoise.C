@@ -1,5 +1,6 @@
 int GenerateNoise(int seed,char* filename)
 {
+    std::cout << "start" << std::endl;
     TFile* wf_file = new TFile("digi.root");
     std::vector<double> *oversampling = 0;
     TTree* wftree = (TTree*)wf_file->Get("waveformTree");
@@ -27,10 +28,10 @@ int GenerateNoise(int seed,char* filename)
     std::vector<float> noise_current;
     std::vector<float> noise_int;
     TTree *t = new TTree("noiselib","Noise Library");
-    t->Branch("noise_current", &noise_current);
-    t->Branch("noise_int", &noise_int);
-    t->Branch("noise_filter", &noise_filter);
-    t->Branch("noise_tdomain", &noise_tdomain);
+    t->Branch("noise_int", &noise_current);
+    //t->Branch("noise_int", &noise_int);
+    //t->Branch("noise_filter", &noise_filter);
+    //t->Branch("noise_tdomain", &noise_tdomain);
 
     int ntick = 220000;//1/fSamplingInterval*1.0e6;
 	//Create Noise spectrum in frequency
@@ -42,7 +43,7 @@ int GenerateNoise(int seed,char* filename)
     TRandom3* fRand = new TRandom3(seed);
 	//width of frequency bin in kHz, add noise up to OverSamplingRatio*default sampling frequency 
 	double binWidth = 25*1000./0.5/double(ntick);
-	for(int lib_len = 0; lib_len < 1; lib_len++){
+	for(int lib_len = 0; lib_len < 1000; lib_len++){
         for (int i = 0; i < ntick; i++)
 	    {
 		    double local_freqency = (i*binWidth + 0.5*binWidth)*1000;
@@ -78,12 +79,16 @@ int GenerateNoise(int seed,char* filename)
 	    TVirtualFFT* fftc2r = TVirtualFFT::FFT(1, &ntick, "C2R M K");
 	    fftc2r->SetPointsComplex(noise_re, noise_im);
 	    fftc2r->Transform();
-	    double factor = 1.8/sqrt((double)ntick)/1.3/1.4;//1.8 added to normalize noise magnitude to have 200 e- noise per data point on current waveform of 2 MHz sampling rate. 
+	    double factor = 150000./sqrt((double)ntick);//1.8 added to normalize noise magnitude to have 200 e- noise per data point on current waveform of 2 MHz sampling rate. 
 	
         for(int i=0; i < oversampling->size()/2; i++)
 	    {
+            //Save noise only waveform
+            noise_tdomain.push_back(factor*fftc2r->GetPointReal(i+10000, false));
+            //Save signal only waveform, the input waveform has a 100 MHz oversampling rate, need to dowmsample to 50 MHz.
             //noise_tdomain.push_back(oversampling->at(i*2));
-            noise_tdomain.push_back(factor*fftc2r->GetPointReal(i+10000, false) + oversampling->at(i*2)) ;
+            //save signal+noise waveform.
+            //noise_tdomain.push_back(factor*fftc2r->GetPointReal(i+10000, false) + oversampling->at(i*2)) ;
 	    }
         std::vector<double> wf_current;
         for(int iter = 0; iter < noise_tdomain.size() - 1; iter++)
