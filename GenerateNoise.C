@@ -43,7 +43,7 @@ int GenerateNoise(int seed,char* filename)
     TRandom3* fRand = new TRandom3(seed);
 	//width of frequency bin in kHz, add noise up to OverSamplingRatio*default sampling frequency 
 	double binWidth = 25*1000./0.5/double(ntick);
-	for(int lib_len = 0; lib_len < 1000; lib_len++){
+	for(int lib_len = 0; lib_len < 100; lib_len++){
         for (int i = 0; i < ntick; i++)
 	    {
 		    double local_freqency = (i*binWidth + 0.5*binWidth)*1000;
@@ -81,7 +81,8 @@ int GenerateNoise(int seed,char* filename)
 	    fftc2r->Transform();
 	    double factor = 150000./sqrt((double)ntick);//1.8 added to normalize noise magnitude to have 200 e- noise per data point on current waveform of 2 MHz sampling rate. 
 	
-        for(int i=0; i < oversampling->size()/2; i++)
+        for(int i = 0; i < 25*2000; i++)
+        //for(int i=0; i < oversampling->size()/2; i++)
 	    {
             //Save noise only waveform
             noise_tdomain.push_back(factor*fftc2r->GetPointReal(i+10000, false));
@@ -92,7 +93,7 @@ int GenerateNoise(int seed,char* filename)
 	    }
         std::vector<double> wf_current;
         for(int iter = 0; iter < noise_tdomain.size() - 1; iter++)
-            wf_current.push_back(noise_tdomain[iter+1] - noise_tdomain[iter]);
+            wf_current.push_back(noise_tdomain[iter+1] - noise_tdomain[iter]/2.);//Reduce the noise magnitude to 100 e- for sensitivity paper.
         double GAIN  = 4.206410398e+07;// 1.270891926e+09;
     
         static float xv[6] = {0}, yv[6] = {0};
